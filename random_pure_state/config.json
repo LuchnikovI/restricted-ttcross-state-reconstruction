@@ -1,0 +1,9 @@
+{
+    "ttcross_rank": 20,
+    "sweeps_num": 6,
+    "restrictions": [3, 5, 7, 9],
+    "qubits_number": 30,
+    "max_mps_rank": 4,
+    "noise_std": 0.001,
+    "prngkey": 84
+}

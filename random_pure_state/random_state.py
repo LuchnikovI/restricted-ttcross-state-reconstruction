@@ -4,8 +4,11 @@ from jax import random
 import numpy as np
 from tqdm import tqdm
 import json
-from mps_utils import *
 from ttrs import TTVc64
+
+import sys;
+sys.path.append("../") 
+from mps_utils import *
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -22,12 +25,19 @@ def main(argv):
     max_mps_rank = data["max_mps_rank"]
     ttcross_rank = data["ttcross_rank"]
     sweeps_num = data["sweeps_num"]
-    random_indices_num = data["random_indices_num"]
-    result = {"config": None, "max_n": [], "cosine_sim": [], "mean_err": []}
+    noise_std = data["noise_std"]
+    result = {
+        "config": None,
+        "corr_cosine_sim": [],
+        "infid": [],
+        "trace": [],
+    }
     for restriction in restrictions:
         print("Experiment for at most {}-points corr. function has started.".format(restriction))
         print("// ------------------------------------------------------ //")
-        corr = random_corr(key, qubits_number, max_mps_rank)  # corr. function has rank max_mps_rank ** 2
+        psi = random_pure_state(key, qubits_number, max_mps_rank)
+        dens = pure_state2dens(psi)
+        corr = dens2corr(dens)
         # ttcross initialization
         tt = TTVc64(
             qubits_number * [4], # modes dimensions of a tensor train
@@ -44,7 +54,7 @@ def main(argv):
             global max_n
             max_n = max(max_n, check_indices(x))
             log_ampl, sign = log_eval(corr, x)
-            return jnp.exp(log_ampl) * sign
+            return jnp.exp(log_ampl) * sign + noise_std * np.random.normal(log_ampl.shape)
         # main reconstruction loop
         for i in tqdm(range(qubits_number * sweeps_num)):
             index = tt.get_args()
@@ -54,18 +64,18 @@ def main(argv):
                 val = fun(index)
                 tt.update(np.array(val))
         # processing of results
-        result["max_n"].append(str(max_n))
+        if max_n > restriction:
+            raise RuntimeError("A reconstruction process called a forbidden corr.function.")
         recon_corr = tt.get_kernels()
-        key, subkey = random.split(key)
-        random_indices = random.categorical(subkey, jnp.array([1., 1., 1., 1.]), shape = (random_indices_num, qubits_number))
-        log_corr_val, _ = log_eval(corr, random_indices)
-        log_corr_val_recon, _ = log_eval(recon_corr, random_indices)
-        mean_err = jnp.abs((log_corr_val - log_corr_val_recon) / (log_corr_val + log_corr_val_recon)).mean()
-        result["mean_err"].append(str(mean_err))
-        set_to_forward_canonical(recon_corr)
+        recon_dens = corr2dens(recon_corr)
+        trace = dens_trace(recon_dens).real
         set_to_forward_canonical(corr)
-        cosine_sim = jnp.real(dot(recon_corr, corr))
-        result["cosine_sim"].append(str(float(cosine_sim)))
+        set_to_forward_canonical(recon_corr)
+        corr_cosine_sim = dot(corr, conj(recon_corr)).real
+        infid = 1. - fidelity(recon_dens, psi)
+        result["infid"].append(str(float(infid)))
+        result["corr_cosine_sim"].append(str(float(corr_cosine_sim)))
+        result["trace"].append(str(float(trace)))
     result["config"] = data
     with open("result.json", "w") as outfile:
         outfile.write(json.dumps(result))
