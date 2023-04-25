@@ -1,0 +1,11 @@
+{
+    "ttcross_rank": 25,
+    "truncation_rank": 25,
+    "sweeps_num": 6,
+    "restrictions": [6, 10],
+    "time_steps": 30,
+    "sqrt_rank": 6,
+    "local_choi_rank": 2,
+    "noise_std": 0,
+    "prngkey": 42
+} 

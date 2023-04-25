@@ -1,0 +1,10 @@
+{
+    "ttcross_rank": 5,
+    "sweeps_num": 200,
+    "restrictions": [5, 7],
+    "time_steps": 30,
+    "n": 7,
+    "m": 5,
+    "noise_std": 1e-4,
+    "prngkey": 84
+}

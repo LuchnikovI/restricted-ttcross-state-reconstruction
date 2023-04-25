@@ -47,7 +47,7 @@
     "prngkey": 42,                 # A random seed, any positive integer
 }
 ```
-- One runs experiments as follows `python random_state.py config.json`.
+- One runs experiments as follows `python run.py config.json`.
 
 ## How to plot results
 

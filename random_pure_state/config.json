@@ -4,6 +4,6 @@
     "restrictions": [3, 5, 7, 9],
     "qubits_number": 30,
     "max_mps_rank": 4,
-    "noise_std": 0.001,
+    "noise_std": 0,
     "prngkey": 84
 }
